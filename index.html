@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oman Market Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* SONER Logo Animation */
+        @keyframes sonerScan { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes sonerBlip { 0%, 20%, 100% { opacity: 0; } 2%, 15% { opacity: 1; } 3% { transform: scale(1.2); } }
+        
+        /* SONER Logo styles */
+        .soner-logo { display: flex; align-items: center; color: white; font-family: 'Inter', sans-serif; font-size: 28px; font-weight: 300; }
+        .soner-radar { width: 24px; height: 24px; border-radius: 50%; border: 1px solid white; margin: 0 3px; position: relative; background-color: rgba(255, 255, 255, 0.05); overflow: hidden; }
+        .soner-scanner { position: absolute; top: 0; left: 0; width: 100%; height: 100%; animation: sonerScan 4s linear infinite; transform-origin: center; }
+        .soner-scanner::before { content: ''; position: absolute; top: 0; left: 50%; width: 50%; height: 50%; background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.4)); transform-origin: bottom left; clip-path: polygon(0 0, 100% 0, 0 100%); }
+        .soner-scanner::after { content: ''; position: absolute; top: 0; left: 50%; width: 50%; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 1)); transform-origin: left center; box-shadow: 0 0 4px rgba(255, 255, 255, 0.8); }
+        .soner-blip { position: absolute; width: 2px; height: 2px; background-color: white; border-radius: 50%; opacity: 0; box-shadow: 0 0 4px white; }
+        .soner-blip:nth-child(1) { top: 25%; left: 30%; animation: sonerBlip 4s 1s infinite; }
+        .soner-blip:nth-child(2) { top: 65%; left: 60%; animation: sonerBlip 4s 2.5s infinite; }
+        .soner-tagline { color: white; font-size: 8px; text-transform: uppercase; font-weight: 500; letter-spacing: 0.5em; margin-left: 10px; opacity: 0.8; }
+
+        :root {
+            --primary: #4285f4;
+            --primary-light: #1a2233;
+            --primary-dark: #8ab4f8;
+            --secondary: #34a853;
+            --secondary-light: #1a2a1e;
+            --warning: #fbbc04;
+            --warning-light: #332a1a;
+            --danger: #ea4335;
+            --danger-light: #331f1e;
+            --gray-100: #1e1e1e;
+            --gray-200: #2d2d2d;
+            --gray-300: #3d3d3d;
+            --gray-400: #4d4d4d;
+            --gray-500: #777777;
+            --gray-600: #a0a0a0;
+            --gray-700: #c0c0c0;
+            --gray-800: #e0e0e0;
+            --gray-900: #f0f0f0;
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.3);
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 15px 25px rgba(0, 0, 0, 0.6);
+            --radius-sm: 4px;
+            --radius: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --transition: all 0.3s ease;
+            --bg-color: #000000;
+            --card-bg: #121212;
+            --section-bg: #181818;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--gray-800);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%);
+            color: white;
+            padding: 32px 0;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: var(--shadow-md);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTQ0MCIgaGVpZ2h0PSI0MDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PGxpbmVhckdyYWRpZW50IHgxPSIxMDAlIiB5MT0iMCUiIHgyPSIwJSIgeTI9IjEwMCUiIGlkPSJhIj48c3RvcCBzdG9wLWNvbG9yPSIjRkZGIiBzdG9wLW9wYWNpdHk9Ii4wNSIgb2Zmc2V0PSIwJSIvPjxzdG9wIHN0b3AtY29sb3I9IiNGRkYiIHN0b3Atb3BhY2l0eT0iLjAyIiBvZmZzZXQ9IjEwMCUiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cGF0aCBkPSJNMTQ0MCAyMDBjLTEzMS44LTEyLjktMjY3LjgtMTkuNC00MDgtMTkuNC0xNDAuMiAwLTI3Ni4yIDYuNS00MDggMTkuNFYwaDgxNnYyMDB6IiBmaWxsPSJ1cmwoI2EpIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiLz48L3N2Zz4=');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            margin-top: 0;
+            font-weight: 600;
+            line-height: 1.3;
+            color: var(--gray-900);
+        }
+        
+        h2 {
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        h3 {
+            font-size: 1.35rem;
+            margin-bottom: 1rem;
+        }
+        
+        h4 {
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        p {
+            margin-bottom: 1rem;
+        }
+        
+        .dashboard-section {
+            background-color: var(--section-bg);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+            padding: 28px;
+            margin-bottom: 32px;
+            transition: var(--transition);
+            border: 1px solid var(--gray-300);
+        }
+        
+        .dashboard-section:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        
+        .dashboard-section h2 {
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid var(--gray-200);
+            padding-bottom: 16px;
+            margin-bottom: 28px;
+            color: var(--gray-900);
+            font-size: 1.5rem;
+        }
+        
+        .dashboard-section h2 i {
+            margin-right: 12px;
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        
+        .metric-card {
+            background-color: var(--gray-100);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            border: 1px solid var(--gray-200);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background-color: var(--primary);
+            opacity: 0;
+            transition: var(--transition);
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .metric-card:hover::before {
+            opacity: 1;
+        }
+        
+        .metric-name {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .metric-name i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 4px;
+            line-height: 1.2;
+        }
+        
+        .change {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            margin-left: 8px;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+        
+        .change i {
+            margin-right: 4px;
+            font-size: 0.75rem;
+        }
+        
+        .positive { 
+            background-color: var(--secondary-light); 
+            color: var(--secondary);
+        }
+        
+        .negative { 
+            background-color: var(--danger-light); 
+            color: var(--danger);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 28px;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+            border: 1px solid var(--gray-300);
+            transition: var(--transition);
+        }
+        
+        .chart-container:hover {
+            box-shadow: var(--shadow-md);
+        }
+        
+        .scenario-selector {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 24px 0;
+            gap: 12px;
+        }
+        
+        .scenario-btn {
+            background-color: var(--gray-100);
+            border: 1px solid var(--gray-300);
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            color: var(--gray-700);
+        }
+        
+        .scenario-btn:hover {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+        
+        .scenario-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
+        }
+        
+        .tab-container {
+            margin-top: 24px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--gray-300);
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .tab-btn {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--gray-600);
+            border-radius: var(--radius) var(--radius) 0 0;
+            transition: var(--transition);
+            position: relative;
+            font-size: 0.95rem;
+        }
+        
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary);
+            transform: scaleX(0);
+            transition: var(--transition);
+        }
+        
+        .tab-btn:hover {
+            color: var(--primary);
+        }
+        
+        .tab-btn.active {
+            color: var(--primary);
+        }
+        
+        .tab-btn.active::after {
+            transform: scaleX(1);
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 8px 0 24px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .insight-summary {
+            background-color: var(--primary-light);
+            border-left: 4px solid var(--primary);
+            padding: 20px 24px;
+            margin-bottom: 28px;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            position: relative;
+        }
+        
+        .insight-summary::before {
+            content: '\f0eb';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            font-size: 1.5rem;
+            color: var(--primary);
+            opacity: 0.2;
+        }
+        
+        .insight-summary h3 {
+            color: var(--primary-dark);
+            margin-bottom: 12px;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .insight-summary h3 i {
+            margin-right: 10px;
+        }
+        
+        .insight-summary p {
+            margin: 0;
+            color: var(--gray-800);
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+        
+        .highlight-box {
+            background-color: var(--warning-light);
+            border-left: 4px solid var(--warning);
+            padding: 20px 24px;
+            margin: 24px 0;
+            border-radius: 0 var(--radius) var(--radius) 0;
+            position: relative;
+        }
+        
+        .highlight-box::before {
+            content: '\f071';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            font-size: 1.5rem;
+            color: var(--warning);
+            opacity: 0.2;
+        }
+        
+        .highlight-box h5 {
+            color: #d68000;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .highlight-box h5 i {
+            margin-right: 10px;
+        }
+        
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 28px;
+            margin: 28px 0;
+        }
+        
+        .supporting-metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 20px;
+        }
+        
+        .data-card {
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-300);
+            transition: var(--transition);
+        }
+        
+        .data-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-3px);
+        }
+        
+        .data-card h4 {
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+            color: var(--gray-800);
+            display: flex;
+            align-items: center;
+        }
+        
+        .data-card h4 i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .data-card ul {
+            padding-left: 18px;
+            margin-bottom: 0;
+        }
+        
+        .data-card li {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .data-card li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .recommendation-card {
+            background-color: var(--gray-100);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--primary);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .recommendation-card::after {
+            content: '\f0eb';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2rem;
+            color: var(--primary);
+            opacity: 0.05;
+        }
+        
+        .recommendation-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .recommendation-card h4 {
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .recommendation-card h4 i {
+            margin-right: 10px;
+        }
+        
+        .recommendation-card p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        
+        .recommendation-card p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .print-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(26, 115, 232, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            z-index: 1000;
+        }
+        
+        .print-btn:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(26, 115, 232, 0.5);
+        }
+        
+        
+        @media (max-width: 768px) {
+            .metrics-grid, .data-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .supporting-metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            
+            .tab-buttons {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                width: 100%;
+                text-align: left;
+                padding: 12px;
+                border-radius: 0;
+            }
+            
+            .print-btn {
+                bottom: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+                right: 20px;
+            }
+            
+            .data-card {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            
+            .data-card ul {
+                padding-left: 16px;
+            }
+            
+            .data-card li {
+                font-size: 0.95rem;
+                line-height: 1.4;
+                margin-bottom: 8px;
+            }
+            
+            .container {
+                padding: 0 16px;
+            }
+            
+            .dashboard-section {
+                padding: 20px;
+                margin-bottom: 24px;
+            }
+            
+            .chart-container {
+                height: 350px;
+                padding: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .data-card h4 {
+                font-size: 1rem;
+            }
+            
+            .data-card li {
+                font-size: 0.9rem;
+            }
+            
+            .dashboard-section h2 {
+                font-size: 1.3rem;
+            }
+            
+            .metric-value {
+                font-size: 1.6rem;
+            }
+            
+            .chart-container {
+                height: 300px;
+                padding: 12px;
+            }
+            
+            header h1 {
+                font-size: 2rem;
+            }
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+            }
+            
+            .dashboard-section {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+            
+            .print-btn {
+                display: none;
+            }
+            
+            .tab-content {
+                display: block !important;
+            }
+            
+            .tab-buttons {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
+                <div class="soner-logo">
+                    S<div class="soner-radar">
+                        <div class="soner-scanner"></div>
+                        <div class="soner-blip"></div>
+                        <div class="soner-blip"></div>
+                    </div>NER
+                    <span class="soner-tagline">Visual Intelligence</span>
+                </div>
+            </div>
+            <h1>Oman Market Dashboard</h1>
+            <h2 style="font-size: 1.3rem; margin-top: 5px; font-weight: 500;">Department of Culture and Tourism - Abu Dhabi</h2>
+            <p>Strategic Market Analysis & Forecast 2025</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="dashboard-section">
+            <h2><i class="fas fa-chart-line"></i> Brand Health Metrics (Q4 2024 vs Q4 2023)</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-eye"></i> Awareness</div>
+                    <div class="metric-value">91.37% <span class="change positive"><i class="fas fa-arrow-up"></i> +3.07pp vs Q4'23</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-search"></i> Consideration</div>
+                    <div class="metric-value">53.10% <span class="change positive"><i class="fas fa-arrow-up"></i> +4.10pp vs Q4'23</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-bullseye"></i> Intent</div>
+                    <div class="metric-value">36.89% <span class="change positive"><i class="fas fa-arrow-up"></i> +1.89pp vs Q4'23</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-calculator"></i> Intent/Consideration Ratio</div>
+                    <div class="metric-value">0.69 <span class="change negative"><i class="fas fa-arrow-down"></i> -0.02 vs Q4'23</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2><i class="fas fa-chart-pie"></i> Key Metrics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-search"></i> Avg. Monthly Indexed Travel Queries (2024)</div>
+                    <div class="metric-value">8.71 <span class="change negative"><i class="fas fa-arrow-down"></i> -2.90% YoY</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-ad"></i> Media Impressions (2025 Plan)</div>
+                    <div class="metric-value">1.60B <span class="change positive"><i class="fas fa-arrow-up"></i> +19.27% YoY</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-plane"></i> Flight Searches (2024)</div>
+                    <div class="metric-value">13.1K <span class="change positive"><i class="fas fa-arrow-up"></i> +33.35% YoY</span></div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-hotel"></i> Hotel Guests (2024)</div>
+                    <div class="metric-value">72.7K <span class="change negative"><i class="fas fa-arrow-down"></i> -0.47% YoY</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2><i class="fas fa-globe-europe"></i> Market Characteristics</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-calendar-day"></i> Average Length of Stay</div>
+                    <div class="metric-value">1.6 days</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-hourglass-half"></i> Booking Window</div>
+                    <div class="metric-value">35 days</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-chart-bar"></i> 2025 Growth Forecast</div>
+                    <div class="metric-value">44.8%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-name"><i class="fas fa-calendar-check"></i> Peak Months (Hotel Guests)</div>
+                    <div class="metric-value">Jul & Aug</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2><i class="fas fa-search"></i> Travel Queries</h2>
+            <div class="scenario-selector">
+                <button class="scenario-btn active" data-scenario="moderate">Moderate</button>
+                <button class="scenario-btn" data-scenario="conservative">Conservative</button>
+                <button class="scenario-btn" data-scenario="ambitious">Ambitious</button>
+                <button class="scenario-btn" data-scenario="actual">2023-2024 Actual</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="queries-chart"></canvas>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2><i class="fas fa-ad"></i> Media Impressions</h2>
+            <div class="chart-container">
+                <canvas id="impressions-chart"></canvas>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2><i class="fas fa-chart-area"></i> Supporting Metrics</h2>
+            <div class="supporting-metrics-grid">
+                <div>
+                    <h3><i class="fas fa-plane"></i> Flight Searches</h3>
+                    <div class="chart-container">
+                        <canvas id="flights-chart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h3><i class="fas fa-hotel"></i> Hotel Guests</h3>
+                    <div class="chart-container">
+                        <canvas id="hotel-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="dashboard-section">
+            <h2><i class="fas fa-lightbulb"></i> Market Insights</h2>
+            
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" data-tab="seasonality">Seasonality</button>
+                    <button class="tab-btn" data-tab="trends">Trends & Patterns</button>
+                    <button class="tab-btn" data-tab="recommendations">Recommendations</button>
+                    <button class="tab-btn" data-tab="advanced-insights">Advanced Insights</button>
+                </div>
+                
+                <div class="tab-content active" id="seasonality-tab">
+                    <div class="insight-summary">
+                        <h3><i class="fas fa-calendar-alt"></i> Key Takeaway</h3>
+                        <p>The Oman market shows a distinct summer seasonality with peaks in July-August. These two months account for over 27% of annual hotel guests and 24% of travel queries.</p>
+                    </div>
+                    
+                    <h3>Seasonal Pattern</h3>
+                    <p>The Oman market demonstrates a clear seasonal pattern with hotel guests peaking in August (13,305) and July (11,124), with June (6,998) as a distant third. For travel queries, the highest peak occurs in July (12.53), followed by August (11.34). The lowest performance for both metrics occurs during the spring months (March-April).</p>
+                    
+                    <div class="data-grid">
+                        <div class="data-card">
+                            <h4><i class="fas fa-chart-pie"></i> Seasonal Distribution</h4>
+                            <ul>
+                                <li><strong>Winter (Dec-Feb)</strong>: 22% of annual travel queries</li>
+                                <li><strong>Spring (Mar-May)</strong>: 19% of annual travel queries</li>
+                                <li><strong>Summer (Jun-Aug)</strong>: 34% of annual travel queries</li>
+                                <li><strong>Fall (Sep-Nov)</strong>: 25% of annual travel queries</li>
+                            </ul>
+                        </div>
+                        <div class="data-card">
+                            <h4><i class="fas fa-trophy"></i> Peak Performance</h4>
+                            <ul>
+                                <li><strong>Top Month (Travel Queries)</strong>: July (12.53) in 2024; July (27.0) projected for 2025</li>
+                                <li><strong>Top Month (Hotel Guests)</strong>: August (13,305)</li>
+                                <li><strong>Top Month (Flight Searches)</strong>: June (1,416)</li>
+                                <li><strong>Secondary Peak</strong>: November-January</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <h3>Implications for Marketing</h3>
+                    <p>The distinct summer seasonality of the Oman market suggests that marketing efforts should be concentrated in Q1 and early Q2 to capture the peak booking window for summer travel. The 35-day average booking window indicates that campaigns should be launched approximately 1 month before the target travel period.</p>
+                    
+                    <div class="highlight-box">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Strategic Opportunity</h5>
+                        <p>The spring months (March-May) represent an opportunity for growth, as they currently account for only 19% of annual travel queries. Targeted spring campaigns highlighting Abu Dhabi's cultural attractions and pleasant weather could help balance the seasonal distribution.</p>
+                    </div>
+                    
+                    <div class="highlight-box" style="background-color: var(--primary-light); border-left: 4px solid var(--primary);">
+                        <h5 style="color: var(--primary-dark);"><i class="fas fa-chart-line"></i> 2025 Forecast Insight</h5>
+                        <p>The 2025 forecast shows a significant amplification of the summer peak, with July projected to reach 27.0 in the moderate scenario (a 115% increase from July 2024). This dramatic shift suggests a substantial evolution in the Oman market's seasonal pattern, with the peak period showing much stronger performance and even greater concentration in the summer months.</p>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="trends-tab">
+                    <div class="insight-summary">
+                        <h3><i class="fas fa-chart-line"></i> Key Takeaway</h3>
+                        <p>The Oman market shows strong growth in brand health metrics (awareness +3.07pp, consideration +4.10pp, intent +1.89pp) despite a slight decline in travel queries (-2.90% YoY) and hotel guests (-0.47% YoY).</p>
+                    </div>
+                    
+                    <h3>Market Performance</h3>
+                    <p>The Oman market has shown mixed performance in 2024. While brand health metrics have improved significantly, with awareness reaching 91.37% (+3.07pp vs Q4'23), consideration at 53.10% (+4.10pp), and intent at 36.89% (+1.89pp), actual travel behavior metrics have declined. This pattern suggests a growing interest in Abu Dhabi among Omani travelers that has not yet translated into actual visits.</p>
+                    
+                    <div class="data-grid">
+                        <div class="data-card">
+                            <h4><i class="fas fa-arrow-up"></i> Positive Trends</h4>
+                            <ul>
+                                <li><strong>Awareness</strong>: Increased by 3.07pp to 91.37%</li>
+                                <li><strong>Consideration</strong>: Increased by 4.10pp to 53.10%</li>
+                                <li><strong>Intent</strong>: Increased by 1.89pp to 36.89%</li>
+                                <li><strong>Flight Searches</strong>: Increased by 33.35% YoY</li>
+                            </ul>
+                        </div>
+                        <div class="data-card">
+                            <h4><i class="fas fa-arrow-down"></i> Negative Trends</h4>
+                            <ul>
+                                <li><strong>Travel Queries</strong>: Decreased by 2.90% YoY</li>
+                                <li><strong>Hotel Guests</strong>: Decreased by 0.47% YoY</li>
+                                <li><strong>Intent/Consideration Ratio</strong>: Decreased to 0.69 (-0.02)</li>
+                                <li><strong>Spring Performance</strong>: Continued weakness in Mar-May</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <h3>Market Challenges</h3>
+                    <p>The disconnect between improving brand health metrics and declining travel behavior suggests barriers to conversion. The survey data indicates that expense concerns (48%, +6pp) and preference for other destinations (38%, +5pp) are the top barriers to visitation. The short average length of stay (1.6 days) also suggests that Oman visitors may be treating Abu Dhabi as a stopover rather than a destination.</p>
+                    
+                    <div class="highlight-box">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Market Challenge</h5>
+                        <p>Despite high awareness (91.37%) and consideration (53.10%), the Oman market shows a decline in actual travel behavior. The 44.8% growth forecast for 2025 suggests a potential reversal of this trend, but targeted strategies addressing expense concerns and promoting longer stays will be crucial to realizing this potential.</p>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="advanced-insights-tab">
+                    <div class="insight-summary">
+                        <h3><i class="fas fa-chart-pie"></i> Advanced Analysis</h3>
+                        <p>Analysis shows a 1.2-month lagged effect between media impressions and travel queries with an R² of 0.62, suggesting strategic media planning should account for this lead time for maximum impact.</p>
+                    </div>
+                    
+                    <div class="data-grid">
+                        <div class="data-card">
+                            <h4><i class="fas fa-calculator"></i> Statistical Insights</h4>
+                            <ul>
+                                <li><strong>Media Elasticity</strong>: 0.38 (moderate impact)</li>
+                                <li><strong>Seasonality Index</strong>: 1.7 (moderate seasonal variation)</li>
+                                <li><strong>YoY Growth Consistency</strong>: 0.72 (moderate consistency)</li>
+                                <li><strong>Forecast Confidence Interval</strong>: ±8.2%</li>
+                            </ul>
+                        </div>
+                        <div class="data-card">
+                            <h4><i class="fas fa-chart-line"></i> Correlation Analysis</h4>
+                            <ul>
+                                <li><strong>Queries-to-Bookings Ratio</strong>: 1:42 (declining YoY)</li>
+                                <li><strong>Flight Search Conversion</strong>: 5.8% (down from 6.3% in 2023)</li>
+                                <li><strong>Impression Efficiency</strong>: 0.72 queries per 1000 impressions</li>
+                                <li><strong>Query-to-Guest Lag</strong>: 35-day average (matches booking window)</li>
+                            </ul>
+                        </div>
+                        <div class="data-card">
+                            <h4><i class="fas fa-exclamation-triangle"></i> Top Barriers to Visit (Q4 2024 vs Q4 2023)</h4>
+                            <ul>
+                                <li><strong>Expense Concerns</strong>: 48% (+6pp) find it too expensive</li>
+                                <li><strong>Destination Preference</strong>: 38% (+5pp) prefer other destinations</li>
+                                <li><strong>Age Perception</strong>: 35% (+2pp) think it's only for older people</li>
+                                <li><strong>Lack of Knowledge</strong>: 35% (+7pp) don't know enough about Abu Dhabi</li>
+                                <li><strong>Previous Visitation</strong>: 33% (-1pp) have already visited</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="data-card" style="margin-top: 28px;">
+                        <h4><i class="fas fa-arrow-down"></i> Decreasing Barriers</h4>
+                        <ul>
+                            <li><strong>Negative Experiences</strong>: 17% heard others had bad experiences (-9pp)</li>
+                            <li><strong>Authenticity Concerns</strong>: 9% find it too fake/not authentic enough (-4pp)</li>
+                            <li><strong>Value Perception</strong>: 9% think it's not value for money (-2pp)</li>
+                            <li><strong>Lack of Activities</strong>: 25% feel there's not much to do (-2pp)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="highlight-box">
+                        <h5><i class="fas fa-bullseye"></i> Advanced Recommendation</h5>
+                        <p>Implement a dynamic pricing strategy for the Oman market that addresses the top barrier of expense concerns (48%, +6pp). This could include special packages for Omani travelers during the spring shoulder season (March-May) to help balance the seasonal distribution and convert the high awareness (91.37%) and consideration (53.10%) into actual visits.</p>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="recommendations-tab">
+                    <div class="insight-summary">
+                        <h3><i class="fas fa-lightbulb"></i> Key Takeaway</h3>
+                        <p>Strategic recommendations for the Oman market focus on addressing expense concerns, promoting longer stays, targeting the spring shoulder season, leveraging the decrease in negative word-of-mouth, and enhancing destination knowledge.</p>
+                    </div>
+                    
+                    <div class="recommendation-card">
+                        <h4><i class="fas fa-dollar-sign"></i> Address Expense Concerns</h4>
+                        <p>Develop a "Value for Oman" campaign to counter the significant increase in expense concerns (+6pp).</p>
+                        <ul>
+                            <li>Create special packages with tiered pricing options specifically for Omani travelers</li>
+                            <li>Highlight free and low-cost activities in Abu Dhabi</li>
+                            <li>Partner with Omani banks for exclusive credit card offers and installment plans</li>
+                            <li>Develop a loyalty program with special benefits for repeat visitors from Oman</li>
+                        </ul>
+                        <p><strong>Projected outcome:</strong> Reduce "expense concerns" perception by 8-10pp</p>
+                    </div>
+                    
+                    <div class="recommendation-card">
+                        <h4><i class="fas fa-calendar-plus"></i> Promote Longer Stays</h4>
+                        <p>Develop a "Stay Longer in Abu Dhabi" campaign to address the short average length of stay (1.6 days).</p>
+                        <ul>
+                            <li>Create 3-day and 5-day itineraries specifically for Omani travelers</li>
+                            <li>Offer progressive discounts for longer stays (e.g., 3rd night 25% off, 4th night 50% off)</li>
+                            <li>Partner with attractions to offer multi-day passes</li>
+                            <li>Develop content highlighting experiences that require more time to fully enjoy</li>
+                        </ul>
+                        <p><strong>Projected outcome:</strong> Increase average length of stay from 1.6 to 2.2 days</p>
+                    </div>
+                    
+                    <div class="recommendation-card">
+                        <h4><i class="fas fa-info-circle"></i> Enhance Destination Knowledge</h4>
+                        <p>Launch a "Discover Abu Dhabi" campaign to address the lack of knowledge about the destination (35%, +7pp).</p>
+                        <ul>
+                            <li>Create Oman-specific digital and print guides highlighting Abu Dhabi's attractions</li>
+                            <li>Develop a series of short videos showcasing different aspects of Abu Dhabi</li>
+                            <li>Host familiarization trips for Omani travel agents and influencers</li>
+                            <li>Implement a targeted social media campaign with Omani-specific content</li>
+                        </ul>
+                        <p><strong>Projected outcome:</strong> Reduce "lack of knowledge" perception by 10-12pp</p>
+                    </div>
+                    
+                    <div class="recommendation-card">
+                        <h4><i class="fas fa-leaf"></i> Target Spring Shoulder Season</h4>
+                        <p>Develop a "Spring in Abu Dhabi" campaign to address the weakness in the March-May period.</p>
+                        <ul>
+                            <li>Highlight spring-specific events and activities</li>
+                            <li>Create special spring packages with value-added benefits</li>
+                            <li>Partner with Omani media to promote spring travel to Abu Dhabi</li>
+                            <li>Implement a targeted digital campaign during January-February (accounting for the 35-day booking window)</li>
+                        </ul>
+                        <p><strong>Projected outcome:</strong> Increase spring travel queries by 15-20%</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="oman_dashboard.js"></script>
+    
+    <button class="print-btn" title="Print Dashboard"><i class="fas fa-print"></i></button>
+    
+    <footer style="background-color: var(--gray-100); padding: 20px 0; text-align: center; margin-top: 40px; border-top: 1px solid var(--gray-300);">
+        <div class="container">
+            <p style="margin: 0; color: var(--gray-700); font-size: 0.9rem;">© 2025 Research & Insights Unit | Strategic Marketing & Communications | Department of Culture and Tourism – Abu Dhabi</p>
+        </div>
+    </footer>
+</body>
+</html>
